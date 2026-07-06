@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CL-213-WF 空氣感測器學習指南</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <!-- 離線時自動 fallback 至 Windows 內建字型 -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <button class="menu-toggle" id="menuToggle" aria-label="開啟選單">
+    <span></span><span></span><span></span>
+  </button>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-icon">🌬️</div>
+      <div>
+        <h1>CL-213-WF</h1>
+        <p>空氣感測器學習指南</p>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="#overview" class="nav-link active">總覽</a>
+      <a href="#roadmap" class="nav-link">學習路線</a>
+      <a href="#equipment" class="nav-link">設備與接線</a>
+      <a href="#dcon" class="nav-link">DCON 協定</a>
+      <a href="#modbus-rtu" class="nav-link">Modbus RTU</a>
+      <a href="#packet-rtu" class="nav-link">RTU 封包拆解</a>
+      <a href="#modbus-tcp" class="nav-link">Modbus TCP</a>
+      <a href="#wireshark" class="nav-link">Wireshark 觀測</a>
+      <a href="#reference" class="nav-link">通訊協定參考</a>
+    </nav>
+    <div class="sidebar-footer">
+      <span>來源：CL-213-WF學習資料.pptx</span>
+    </div>
+  </aside>
+
+  <main class="content">
+    <!-- Hero -->
+    <section id="overview" class="section hero">
+      <div class="hero-text">
+        <span class="badge">ICPDAS 工業通訊</span>
+        <h2>CL-213-WF 空氣感測器</h2>
+        <p class="lead">透過 DCON、Modbus RTU 與 Modbus TCP 協定，學習讀取 CO、CO<sub>2</sub>、PM2.5、溫濕度等空氣品質數據，並以 Wireshark 觀測封包。</p>
+        <div class="hero-tags">
+          <span class="tag">RS-485</span>
+          <span class="tag">Ethernet</span>
+          <span class="tag">MBRTU</span>
+          <span class="tag">MBTCP</span>
+        </div>
+      </div>
+      <figure class="hero-image">
+        <img src="assets/image1.png" alt="CL-213-WF 空氣感測器">
+      </figure>
+    </section>
+
+    <!-- Roadmap -->
+    <section id="roadmap" class="section">
+      <h2 class="section-title">學習路線</h2>
+      <p class="section-desc">建議依照以下順序逐步熟悉設備與通訊協定。</p>
+      <ol class="roadmap">
+        <li class="roadmap-item">
+          <div class="roadmap-num">01</div>
+          <div>
+            <h3>硬體認識與接線</h3>
+            <p>確認 RS-485 與乙太網路接線、供電與指示燈狀態。</p>
+          </div>
+        </li>
+        <li class="roadmap-item">
+          <div class="roadmap-num">02</div>
+          <div>
+            <h3>DCON 協定</h3>
+            <p>使用 DCON Utility 快速搜尋模組、確認通訊參數，作為除錯基礎。</p>
+          </div>
+        </li>
+        <li class="roadmap-item">
+          <div class="roadmap-num">03</div>
+          <div>
+            <h3>Modbus RTU + MBRTU</h3>
+            <p>透過 RS-485 發送 FC 03/04 指令，讀取感測值與模組資訊。</p>
+          </div>
+        </li>
+        <li class="roadmap-item">
+          <div class="roadmap-num">04</div>
+          <div>
+            <h3>Modbus TCP + MBTCP</h3>
+            <p>透過 Ethernet 連線，理解 MBAP Header 與 PDU 結構。</p>
+          </div>
+        </li>
+        <li class="roadmap-item">
+          <div class="roadmap-num">05</div>
+          <div>
+            <h3>封包拆解與 Wireshark</h3>
+            <p>觀測實際封包，對照 Request / Response 的十六進位內容。</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Equipment -->
+    <section id="equipment" class="section">
+      <h2 class="section-title">設備與接線檢查</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>所需設備</h3>
+          <ul class="checklist">
+            <li><strong>硬體：</strong>CL-213-WF 空氣感測模組</li>
+            <li><strong>軟體：</strong>MBRTU（RS-485）、MBTCP（Ethernet，發送 command 觀察封包）</li>
+            <li><strong>工具：</strong>USB-RS485 轉接器、DCON Utility、eSearch</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>接線檢查清單</h3>
+          <div class="wiring-list">
+            <div class="wiring-item">
+              <span class="wiring-icon">🔌</span>
+              <div>
+                <strong>RS-485 接線</strong>
+                <p>PC ── USB-RS485 ── D-/D+ ── CL-213-WF</p>
+                <p class="hint">裝置管理員應出現 COM 埠（例如 COM6）</p>
+              </div>
+            </div>
+            <div class="wiring-item">
+              <span class="wiring-icon">🌐</span>
+              <div>
+                <strong>乙太網路接線</strong>
+                <p>PC ── 乙太網路 ── CL-213-WF</p>
+                <p class="hint">用 eSearch 搜尋 CL-213-WF 並確認 IP</p>
+              </div>
+            </div>
+            <div class="wiring-item">
+              <span class="wiring-icon">⚡</span>
+              <div>
+                <strong>電源供應</strong>
+                <p>CL-213-WF ── Vs+ / GND</p>
+                <p class="hint">模組供電正常（指示燈亮）</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card spec-card">
+        <h3>CL-213-WF 規格摘要</h3>
+        <table class="data-table spec-table">
+          <tbody>
+            <tr><th>型號</th><td>CL-213-WF</td></tr>
+            <tr><th>量測</th><td>PM2.5、CO、CO<sub>2</sub>、溫度、濕度、露點</td></tr>
+            <tr><th>通訊</th><td>RS-485、Ethernet（PoE）、Wi-Fi</td></tr>
+            <tr><th>協定</th><td>DCON、Modbus RTU、Modbus TCP</td></tr>
+            <tr><th>預設 RS-485</th><td>9600, N, 8, 1，位址 01</td></tr>
+            <tr><th>預設 Ethernet</th><td>IP <code>192.168.255.1</code>、Modbus TCP Port 502、NetID 1</td></tr>
+            <tr><th>網頁登入</th><td>密碼 <code>Admin</code></td></tr>
+          </tbody>
+        </table>
+        <figure class="inline-figure">
+          <img src="assets/image2.png" alt="CL-213-WF 規格表">
+          <figcaption>簡報原始規格表</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- DCON -->
+    <section id="dcon" class="section">
+      <h2 class="section-title">DCON 協定</h2>
+      <p class="section-desc">DCON 用於快速開發與除錯，可在切換到 Modbus 之前先確認模組是否正常回應。</p>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">1</span>
+          <p>打開 <strong>DCON Utility</strong> 並選到正確的 COM port</p>
+        </div>
+        <div class="step">
+          <span class="step-num">2</span>
+          <p>搜尋模組 <strong>CL213WF</strong></p>
+        </div>
+        <div class="step">
+          <span class="step-num">3</span>
+          <p>確認參數：<code>9600, N, 8, 1</code>，位址 <code>01</code></p>
+        </div>
+      </div>
+      <div class="callout">
+        <strong>下一步：</strong>確認模組通訊正常後，需切換為 Modbus RTU 模式並設定正確位址與 Baudrate（見下方截圖）。
+      </div>
+      <figure class="screenshot">
+        <img src="assets/image3.png" alt="CL213WF 韌體設定工具畫面">
+        <figcaption>CL213WF 韌體設定工具 — Protocol 設為 Modbus RTU、Address 192、Baud Rate 9600</figcaption>
+      </figure>
+    </section>
+
+    <!-- Modbus RTU -->
+    <section id="modbus-rtu" class="section">
+      <h2 class="section-title">Modbus RTU 練習</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>連線設定（MBRTU）</h3>
+          <table class="param-table">
+            <tbody>
+              <tr><th>COM Port</th><td>你的 RS-485 埠（如 COM5、COM6）</td></tr>
+              <tr><th>Baudrate</th><td><strong>9600</strong>（正確值）</td></tr>
+              <tr><th>Parity</th><td>None</td></tr>
+              <tr><th>Data bit</th><td>8</td></tr>
+              <tr><th>Stop bit</th><td>1</td></tr>
+              <tr><th>Slave ID</th><td><strong>C0</strong>（十進位 192，與韌體 Address 一致）</td></tr>
+            </tbody>
+          </table>
+          <p class="note warn-note">簡報中曾寫 Baudrate 115200、Unit ID 1，實際測試時這兩項設定錯誤會導致無回應（見下方排查）。</p>
+        </div>
+        <div class="card alert-card">
+          <h3>⚠️ MBRTU 無回應？</h3>
+          <ul class="checklist">
+            <li>確認是否切換到 Modbus 模式</li>
+            <li>確認 COM port 正確</li>
+            <li>接線有無鬆脫</li>
+            <li>Baudrate 正確（應為 9600，不是 115200）</li>
+            <li>Slave ID 正確（應為 C0 / 192，不是 01）</li>
+          </ul>
+          <figure class="inline-figure">
+            <img src="assets/image4.png" alt="MBRTU 無回應排查">
+          </figure>
+        </div>
+      </div>
+      <figure class="screenshot">
+        <img src="assets/image5.png" alt="MBRTU 正確示範">
+        <figcaption>MBRTU 正確連線與讀取示範</figcaption>
+      </figure>
+
+      <div class="command-block">
+        <h3>讀全部感測值（FC 04）</h3>
+        <div class="hex-line">
+          <span class="hex-label">Request</span>
+          <code>C0 04 00 00 00 08 [CRC_L] [CRC_H]</code>
+        </div>
+        <div class="hex-line">
+          <span class="hex-label">含 CRC</span>
+          <code>C0 04 00 00 00 08 E1 1D</code>
+        </div>
+        <div class="hex-line">
+          <span class="hex-label">Response</span>
+          <code>C0 04 10 00 00 03 85 00 1F 14 94 09 BC 1E 05 05 B2 16 C0 C2 90</code>
+        </div>
+      </div>
+
+      <div class="command-block">
+        <h3>只讀 CO<sub>2</sub>（FC 04）</h3>
+        <div class="hex-line">
+          <span class="hex-label">Request</span>
+          <code>C0 04 00 01 00 01</code>
+        </div>
+        <div class="hex-line">
+          <span class="hex-label">Response</span>
+          <code>C0 04 02 03 85 45 B2</code>
+        </div>
+        <p class="note">將 <code>03 85</code> 轉為十進制 = <strong>901 ppm</strong></p>
+      </div>
+
+      <div class="command-block">
+        <h3>讀模組資訊（FC 03）</h3>
+        <table class="param-table">
+          <tbody>
+            <tr><th>Start Address</th><td>40480（或工具顯示的 0-based 位址）</td></tr>
+            <tr><th>Quantity</th><td>6</td></tr>
+          </tbody>
+        </table>
+        <p>可讀到韌體版本、模組名稱等資訊。以下 Request 為 <strong>MBTCP 工具格式</strong>（含 MBAP Header，無 CRC）。</p>
+        <div class="hex-line">
+          <span class="hex-label">Request（MBTCP）</span>
+          <code>00 01 00 00 00 06 01 03 9E 20 00 06</code>
+        </div>
+      </div>
+    </section>
+
+    <!-- Packet RTU -->
+    <section id="packet-rtu" class="section">
+      <h2 class="section-title">RTU 封包拆解</h2>
+
+      <div class="command-block">
+        <h3>讀全部感測值 — Request 拆解</h3>
+        <div class="hex-line">
+          <code>C0 04 00 00 00 08</code>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr><th>位元組</th><th>說明</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>C0</code></td><td>Slave ID</td></tr>
+            <tr><td><code>04</code></td><td>Function Code（讀 Input Registers）</td></tr>
+            <tr><td><code>00 00</code></td><td>起始位置</td></tr>
+            <tr><td><code>00 08</code></td><td>數量（8 個 register）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="command-block">
+        <h3>Response 範例</h3>
+        <div class="hex-line">
+          <code>C0 04 10 00 00 03 85 00 1F 14 94 09 BC 1E 05 05 B2 16 C0 C2 90</code>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr><th>位元組</th><th>說明</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>C0</code></td><td>Slave ID</td></tr>
+            <tr><td><code>04</code></td><td>FC</td></tr>
+            <tr><td><code>10</code></td><td>資料 byte 數（16 bytes）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sensor-grid">
+        <div class="sensor-card"><span class="sensor-label">CO</span><code>00 00</code></div>
+        <div class="sensor-card"><span class="sensor-label">CO<sub>2</sub></span><code>03 85</code></div>
+        <div class="sensor-card"><span class="sensor-label">PM2.5</span><code>00 1F</code></div>
+        <div class="sensor-card"><span class="sensor-label">濕度</span><code>14 94</code></div>
+        <div class="sensor-card"><span class="sensor-label">溫度 °C</span><code>09 BC</code></div>
+        <div class="sensor-card"><span class="sensor-label">溫度 °F</span><code>1E 05</code></div>
+        <div class="sensor-card"><span class="sensor-label">露點 °C</span><code>05 B2</code></div>
+        <div class="sensor-card"><span class="sensor-label">露點 °F</span><code>16 C0</code></div>
+      </div>
+
+      <div class="command-block">
+        <h3>讀模組資訊 — Response 拆解</h3>
+        <div class="hex-line">
+          <code>01 03 0C 00 00 B3 09 D2 13 43 4C 00 C0 00 06</code>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr><th>位元組</th><th>說明</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>00 00 B3 09</code></td><td>韌體版本（FW 低 / FW 高）</td></tr>
+            <tr><td><code>D2 13 43 4C</code></td><td>模組 D213 / CL</td></tr>
+            <tr><td><code>00 C0</code></td><td>位址（192）</td></tr>
+            <tr><td><code>00 06</code></td><td>Baud rate（9600）</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Modbus TCP -->
+    <section id="modbus-tcp" class="section">
+      <h2 class="section-title">Modbus TCP 練習（MBTCP）</h2>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">1</span>
+          <p>瀏覽器登入 CL-213-WF 網頁設定介面</p>
+        </div>
+        <div class="step">
+          <span class="step-num">2</span>
+          <p>Network 頁記下：<strong>IP</strong>、<strong>Port 502</strong>、<strong>NetID 1</strong></p>
+        </div>
+        <div class="step">
+          <span class="step-num">3</span>
+          <p><code>ping &lt;IP&gt;</code> 確認通訊正常</p>
+        </div>
+        <div class="step">
+          <span class="step-num">4</span>
+          <p>連上 MBTCP（確認 Connect 按鈕反白 = 已連線）</p>
+        </div>
+      </div>
+
+      <div class="command-block">
+        <h3>讀全部感測值（FC 04）</h3>
+        <div class="hex-line">
+          <span class="hex-label">Command（無須 CRC）</span>
+          <code>00 01 00 00 00 06 01 04 00 00 00 08</code>
+        </div>
+      </div>
+
+      <h3 class="sub-title">MBAP Header 拆解（7 bytes）</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>位元組</th><th>欄位</th><th>說明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>00 01</code></td><td>Transaction ID</td><td>交易識別碼</td></tr>
+          <tr><td><code>00 00</code></td><td>Protocol ID</td><td>固定為 0（Modbus）</td></tr>
+          <tr><td><code>00 06</code></td><td>Length</td><td>後續 byte 數</td></tr>
+          <tr><td><code>01</code></td><td>Unit ID</td><td>從站識別</td></tr>
+        </tbody>
+      </table>
+
+      <h3 class="sub-title">PDU（Protocol Data Unit）</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>位元組</th><th>欄位</th><th>說明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>04</code></td><td>FC</td><td>Function Code</td></tr>
+          <tr><td><code>00 00</code></td><td>起始位址</td><td>從 register 0 開始</td></tr>
+          <tr><td><code>00 08</code></td><td>數量</td><td>讀取 8 個 register</td></tr>
+        </tbody>
+      </table>
+
+      <div class="command-block">
+        <h3>Response 範例</h3>
+        <div class="hex-line">
+          <code>01 04 10 00 00 03 B2 00 1F 14 B6 09 CC 1E 22 05 CB 16 ED</code>
+        </div>
+        <table class="data-table compact">
+          <tbody>
+            <tr><td><code>01</code></td><td>Unit ID = 1</td></tr>
+            <tr><td><code>04</code></td><td>FC 04</td></tr>
+            <tr><td><code>10</code></td><td>Byte Count = 16</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Wireshark -->
+    <section id="wireshark" class="section">
+      <h2 class="section-title">封包觀測（Wireshark）</h2>
+      <p class="section-desc">使用 Wireshark 擷取 Modbus TCP 流量，對照實際封包與 MBTCP 工具發送的指令。</p>
+      <div class="image-gallery">
+        <figure>
+          <img src="assets/image6.png" alt="Wireshark 封包列表 — Modbus Query 與 Response">
+          <figcaption>封包列表：FC 04 Read Input Registers 的 Query / Response</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/image7.png" alt="Wireshark Response 封包拆解">
+          <figcaption>Response 封包拆解（Frame 134）— 8 筆 Register 數值</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/image8.png" alt="Wireshark 封包列表第二組">
+          <figcaption>封包列表：Query → Response → TCP ACK 完整流程</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/image9.png" alt="Wireshark Request 封包拆解">
+          <figcaption>Request 封包拆解（Frame 133）— MBAP Header + PDU</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- Reference -->
+    <section id="reference" class="section">
+      <h2 class="section-title">通訊協定參考</h2>
+      <p class="section-desc">以下為學習筆記補充，非簡報原文內容。</p>
+
+      <h3 class="sub-title">RS-232 vs RS-485</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th></th><th>RS-232</th><th>RS-485</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>設計目的</strong></td>
+            <td>兩台設備點對點短距離連線</td>
+            <td>多台設備長距離匯流排連線</td>
+          </tr>
+          <tr>
+            <td><strong>常見場景</strong></td>
+            <td>電腦接單一設備、調試</td>
+            <td>工廠現場多台感測器 / IO 模組共用一條線</td>
+          </tr>
+          <tr>
+            <td><strong>你的設備</strong></td>
+            <td>PC 若只有 COM 埠，多半是 RS-232</td>
+            <td>M-7045D、CL-213-WF 的通訊埠</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 class="sub-title">TCP vs UDP</h3>
+      <div class="grid-2">
+        <div class="card">
+          <h3>TCP</h3>
+          <ul>
+            <li>連線導向，確保資料完整送達</li>
+            <li>有重傳機制，適合重要資料</li>
+            <li><strong>Modbus TCP 使用 TCP（Port 502）</strong></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>UDP</h3>
+          <ul>
+            <li>無連線，速度快但不保證送達</li>
+            <li>適合即時串流、廣播</li>
+            <li>常用於影音、DNS 查詢等場景</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer class="page-footer">
+      <p>CL-213-WF 空氣感測器學習指南 · 整理自 CL-213-WF學習資料.pptx</p>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
