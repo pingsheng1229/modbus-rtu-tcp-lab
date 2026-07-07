@@ -1,15 +1,15 @@
-# CL-213-WF deploy script
+# Modbus RTU/TCP Lab deploy script
 param(
     [ValidateSet("netlify", "github")]
     [string]$Method = "github"
 )
 
 $SiteDir = $PSScriptRoot
-$ZipPath = Join-Path (Split-Path $SiteDir) "cl213-web-deploy.zip"
+$ZipPath = Join-Path (Split-Path $SiteDir) "modbus-rtu-tcp-lab-deploy.zip"
 
 function New-DeployZip {
     if (Test-Path $ZipPath) { Remove-Item $ZipPath -Force }
-    $tempDir = Join-Path $env:TEMP "cl213-deploy"
+    $tempDir = Join-Path $env:TEMP "modbus-rtu-tcp-lab-deploy"
     if (Test-Path $tempDir) { Remove-Item $tempDir -Recurse -Force }
     New-Item -ItemType Directory -Path $tempDir | Out-Null
     Copy-Item "$SiteDir\index.html", "$SiteDir\styles.css", "$SiteDir\script.js", "$SiteDir\.nojekyll" $tempDir
@@ -20,7 +20,7 @@ function New-DeployZip {
 }
 
 Write-Host ""
-Write-Host "=== CL-213-WF Deploy ===" -ForegroundColor Cyan
+Write-Host "=== Modbus RTU/TCP Lab Deploy ===" -ForegroundColor Cyan
 Write-Host ""
 
 $zip = New-DeployZip
@@ -54,17 +54,17 @@ if ($LASTEXITCODE -ne 0) {
 if (-not (Test-Path ".git")) {
     git init
     git config user.email "deploy@local"
-    git config user.name "CL213 Deploy"
+    git config user.name "Modbus Lab Deploy"
 }
 
-git add index.html styles.css script.js .nojekyll assets deploy.ps1 deploy.bat
+git add index.html styles.css script.js .nojekyll assets deploy.ps1 deploy.bat README.md
 git diff --cached --quiet
 if ($LASTEXITCODE -ne 0) {
-    git commit -m "Update CL-213-WF learning site"
+    git commit -m "Update Modbus RTU TCP learning site"
 }
 git branch -M main
 
-$repoName = "cl213-web"
+$repoName = "modbus-rtu-tcp-lab"
 Write-Host ""
 Write-Host "[WORKING] Creating GitHub repository..." -ForegroundColor Yellow
 
